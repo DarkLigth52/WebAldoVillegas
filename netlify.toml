@@ -1,0 +1,106 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  netlify.toml — Configuración de despliegue y seguridad
+#  Proyecto: Página Web Sen. Aldo Sergio Villegas Mora
+#  Versión:  3.0  |  Última actualización: 2025
+#  Hosting:  Netlify (plan gratuito)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Build ─────────────────────────────────────────────────────────────────────
+[build]
+  publish = "."          # Raíz del proyecto como carpeta publicada
+  # No hay comando de build — sitio estático puro
+
+# ── Headers de seguridad globales (todas las páginas) ─────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Fuerza HTTPS durante 1 año (HSTS preload)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    # Previene clickjacking — nadie puede embeber en iframe
+    X-Frame-Options            = "DENY"
+    # Evita MIME sniffing (ataques de tipo confusión de contenido)
+    X-Content-Type-Options     = "nosniff"
+    # Controla el Referer enviado a sitios externos
+    Referrer-Policy            = "strict-origin-when-cross-origin"
+    # Deshabilita funciones del navegador no utilizadas
+    Permissions-Policy         = "camera=(), microphone=(), geolocation=(), payment=()"
+    # CSP: solo recursos propios + imágenes externas permitidas (data: y blob: para imágenes subidas)
+    Content-Security-Policy    = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none';"
+
+# ── Headers específicos del panel de administración ───────────────────────────
+[[headers]]
+  for = "/panel-legislativo.html"
+  [headers.values]
+    # CSP más restrictiva: sin conexiones externas desde el panel
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'none'; frame-ancestors 'none';"
+    # El panel no debe aparecer en buscadores ni ser indexado
+    X-Robots-Tag             = "noindex, nofollow"
+
+# ── Caché de fuentes auto-hosteadas (1 año, inmutable) ────────────────────────
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Caché de imágenes (1 año, inmutable) ──────────────────────────────────────
+[[headers]]
+  for = "/assets/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── Caché de CSS (1 día) ──────────────────────────────────────────────────────
+[[headers]]
+  for = "/assets/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# ── Caché de JS (1 día) ───────────────────────────────────────────────────────
+[[headers]]
+  for = "/assets/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# ── HTML sin caché (siempre actualizado) ──────────────────────────────────────
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# ── Redireccionamiento del panel admin ────────────────────────────────────────
+# URL pública: /panel → internamente sirve panel-legislativo.html (URL ofuscada)
+[[redirects]]
+  from   = "/panel"
+  to     = "/panel-legislativo.html"
+  status = 200
+
+# Bloquear intentos de acceso directo a rutas comunes de admin
+[[redirects]]
+  from   = "/admin.html"
+  to     = "/index.html"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/admin"
+  to     = "/index.html"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/login"
+  to     = "/index.html"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/wp-admin"
+  to     = "/index.html"
+  status = 301
+  force  = true
+
+# ── SPA fallback (por si se usa history routing en el futuro) ─────────────────
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}

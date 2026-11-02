@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Panel de Administración — Sen. Aldo Villegas</title>
+<!-- Fuentes auto-hosteadas — sin Google Fonts, sin tracking externo -->
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-emblem">A</div>
+      <div class="login-title">Panel de Administración</div>
+    </div>
+    <p class="login-sub">Acceso restringido al equipo de campaña</p>
+    <div class="login-error" id="login-error">Contraseña incorrecta. Intenta de nuevo.</div>
+    <!-- Campo CSRF oculto — protege contra ataques de formulario externo -->
+    <input type="hidden" id="csrf-token-field" value="">
+    <label>Contraseña de acceso</label>
+    <input type="password" id="pass-input" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-login" onclick="login()">Ingresar al Panel →</button>
+    <p class="login-hint" style="font-size:0.75rem;color:#8B949E;text-align:center;margin-top:1rem;">🔐 URL de acceso no publicada · Acceso restringido</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-brand">
+        <div class="sidebar-emblem" id="sb-emblem">N</div>
+        <div class="sidebar-brand-text">
+          <h2 id="sb-nombre">Campaña 2025</h2>
+          <p>Panel de Control</p>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">General</div>
+      <div class="nav-item active" onclick="go('dashboard',this)"><span class="ni">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="go('hero',this)"><span class="ni">🏠</span>Hero & Portada</div>
+      <div class="nav-item" onclick="go('sobre',this)"><span class="ni">👤</span>Sobre Mí</div>
+      <div class="nav-item" onclick="go('mision',this)"><span class="ni">🎯</span>Misión &amp; Visión</div>
+      <div class="nav-section-label">Contenido</div>
+      <div class="nav-item" onclick="go('propuestas',this)"><span class="ni">📋</span>Propuestas</div>
+      <div class="nav-item" onclick="go('eventos',this)"><span class="ni">📅</span>Eventos</div>
+      <div class="nav-item" onclick="go('galeria',this)"><span class="ni">📰</span>Noticias</div>
+      <div class="nav-item" onclick="go('redes',this)"><span class="ni">📲</span>Redes Sociales</div>
+      <div class="nav-item" onclick="go('contacto',this)"><span class="ni">📧</span>Contacto</div>
+      <div class="nav-section-label">Ajustes</div>
+      <div class="nav-item" onclick="go('comisiones',this)"><span class="ni">🏛️</span>Comisiones</div>
+      <div class="nav-item" onclick="go('funcionarios',this)"><span class="ni">👥</span>Funcionarios</div>
+      <div class="nav-item" onclick="go('colores',this)"><span class="ni">🎨</span>Colores del Sitio</div>
+      <div class="nav-item" onclick="go('config',this)"><span class="ni">⚙️</span>Configuración</div>
+    </nav>
+    <div class="sidebar-foot">
+      <a href="index.html" target="_blank" class="btn-ver">🔗 Ver página pública</a>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button class="admin-menu-btn" id="admin-menu-btn" onclick="toggleSidebar()" style="display:none;" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+        <div>
+          <div class="topbar-title" id="tb-title">Dashboard</div>
+          <div class="topbar-breadcrumb">Panel de Administración</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-badge" id="tb-badge">Admin</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-hdr"><h2>Dashboard</h2><p>Resumen del estado de tu página política</p></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-num" id="st-prop">0</div><div class="stat-lbl">Propuestas</div></div>
+          <div class="stat-card accent"><div class="stat-num" id="st-ev">0</div><div class="stat-lbl">Eventos</div></div>
+          <div class="stat-card"><div class="stat-num" id="st-gal">0</div><div class="stat-lbl">Fotos</div></div>
+          <div class="stat-card accent"><div class="stat-num" id="st-img">—</div><div class="stat-lbl">Portada</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Próximo Evento</div>
+          <div id="dash-proximo" style="color:var(--muted);font-size:0.9rem">Sin eventos registrados.</div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Acciones rápidas</div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="go('eventos',null)">📅 Añadir evento</button>
+            <button class="btn btn-ghost" onclick="go('galeria',null)">📷 Subir fotos</button>
+            <button class="btn btn-ghost" onclick="go('propuestas',null)">📋 Nueva propuesta</button>
+            <button class="btn btn-ghost" onclick="go('colores',null)">🎨 Cambiar colores</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO -->
+      <div class="page" id="page-hero">
+        <div class="page-hdr"><h2>Hero &amp; Portada</h2><p>Lo primero que ve el visitante al abrir el sitio</p></div>
+        <div class="card">
+          <div class="card-hdr">Información principal</div>
+          <div class="row c2">
+            <div class="fg"><label>Nombre — línea 1</label><input type="text" id="f-nombre1" placeholder="Tu"></div>
+            <div class="fg"><label>Nombre — línea 2</label><input type="text" id="f-nombre2" placeholder="Nombre Aquí"></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>Partido y Cargo <small style="color:var(--muted);font-weight:400">(pastilla gris del hero)</small></label><input type="text" id="f-partido" placeholder="Alianza Libre · Cochabamba"></div>
+            <div class="fg"><label>Badge rojo <small style="color:var(--muted);font-weight:400">(pastilla roja destacada)</small></label><input type="text" id="f-badge" placeholder="Senador 2025–2030"></div>
+          </div>
+          <div class="fg"><label>Eslogan / Frase principal</label><textarea id="f-slogan" style="min-height:70px"></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Imagen de fondo del Hero</div>
+          <div class="upload-zone" onclick="document.getElementById('f-hero-file').click()">
+            <span class="uz-icon">🖼️</span>Haz clic para subir imagen de fondo (JPG, PNG, WebP)
+          </div>
+          <input type="file" id="f-hero-file" accept="image/*" style="display:none" onchange="fileToData(this,'heroBg','hero-preview')">
+          <img id="hero-preview" class="preview-img" style="display:none">
+        </div>
+        <button class="btn btn-primary" onclick="guardarHero()">💾 Guardar Hero</button>
+      </div>
+
+      <!-- SOBRE MÍ -->
+      <div class="page" id="page-sobre">
+        <div class="page-hdr"><h2>Sobre Mí</h2><p>Fotografía, título, descripción y biografía del Senador</p></div>
+        <div class="card">
+          <div class="card-hdr">Fotografía del Senador</div>
+          <div class="upload-zone" onclick="document.getElementById('f-sobre-file').click()">
+            <span class="uz-icon">👤</span>Subir foto del Senador (recomendado: formato cuadrado o vertical)
+          </div>
+          <input type="file" id="f-sobre-file" accept="image/*" style="display:none" onchange="fileToData(this,'sobreImg','sobre-preview')">
+          <img id="sobre-preview" class="preview-img" style="display:none">
+        </div>
+        <div class="card">
+          <div class="card-hdr">Logo del partido <small style="color:var(--muted);font-weight:400">(esquina superior derecha de Sobre Mí)</small></div>
+          <div class="upload-zone" onclick="document.getElementById('f-logo-partido-file').click()" style="padding:1rem 1.5rem;">
+            <span class="uz-icon">🏛️</span>Subir logo del partido (PNG o WebP con fondo transparente recomendado)
+          </div>
+          <input type="file" id="f-logo-partido-file" accept="image/*" style="display:none" onchange="fileToData(this,'logoPartido','logo-partido-preview')">
+          <img id="logo-partido-preview" class="preview-img" style="display:none;max-height:80px;object-fit:contain;">
+          <button class="btn btn-danger btn-sm" style="margin-top:0.5rem;display:none;" id="btn-quitar-logo" onclick="quitarLogoPartido()">✕ Quitar logo</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Título y descripción del perfil</div>
+          <div class="fg"><label>Título principal (nombre con título)</label>
+            <input type="text" id="f-sobre-titulo" placeholder="Lic. Aldo Sergio Villegas Mora">
+          </div>
+          <div class="fg"><label>Descripción breve (debajo del título)</label>
+            <input type="text" id="f-sobre-lead" placeholder="Senador de Bolivia por Cochabamba...">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Credenciales / Badges del perfil</div>
+          <p style="color:var(--muted);font-size:0.83rem;margin-bottom:1rem">Estos badges aparecen como tarjetas en la sección de perfil profesional.</p>
+          <div class="row c2">
+            <div class="fg"><label>Ícono (emoji)</label><input type="text" id="f-cred-icono" placeholder="🎓" maxlength="4"></div>
+            <div class="fg"><label>Texto del badge</label><input type="text" id="f-cred-texto" placeholder="Lic. Administración de Empresas"></div>
+          </div>
+          <button class="btn btn-primary" onclick="agregarCredencial()">➕ Añadir Credencial</button>
+          <div class="items-list" id="lista-credenciales" style="margin-top:1rem"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Texto biográfico</div>
+          <div class="fg">
+            <label>Párrafos separados por línea en blanco</label>
+            <textarea id="f-sobre-texto" style="min-height:220px"></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarSobre()">💾 Guardar Sobre Mí</button>
+      </div>
+
+      <!-- MISIÓN & VISIÓN -->
+      <div class="page" id="page-mision">
+        <div class="page-hdr"><h2>Misión &amp; Visión</h2><p>Edita los textos de las tarjetas de compromiso legislativo</p></div>
+
+        <div class="card">
+          <div class="card-hdr">🎯 Misión</div>
+          <div class="fg"><label>Título de la Misión</label>
+            <input type="text" id="f-mision-titulo" placeholder="Compromiso con Bolivia">
+          </div>
+          <div class="fg"><label>Texto de la Misión</label>
+            <textarea id="f-mision-texto" style="min-height:160px"></textarea>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">🔭 Visión</div>
+          <div class="fg"><label>Título de la Visión</label>
+            <input type="text" id="f-vision-titulo" placeholder="Bolivia Próspera e Integrada">
+          </div>
+          <div class="fg"><label>Texto de la Visión</label>
+            <textarea id="f-vision-texto" style="min-height:160px"></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="guardarMision()">💾 Guardar Misión &amp; Visión</button>
+      </div>
+
+      <!-- PROPUESTAS -->
+      <div class="page" id="page-propuestas">
+        <div class="page-hdr"><h2>Propuestas</h2><p>Gestiona tu plataforma política</p></div>
+        <div class="card">
+          <div class="card-hdr">Añadir nueva propuesta</div>
+          <div class="row c3">
+            <div class="fg"><label>Ícono (emoji)</label><input type="text" id="f-prop-icono" placeholder="🏥" maxlength="4"></div>
+            <div class="fg" style="grid-column:span 2"><label>Título</label><input type="text" id="f-prop-titulo" placeholder="Salud Pública"></div>
+          </div>
+          <div class="fg"><label>Descripción</label><textarea id="f-prop-desc" style="min-height:70px"></textarea></div>
+          <button class="btn btn-primary" onclick="agregarPropuesta()">➕ Añadir Propuesta</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Propuestas actuales (<span id="prop-count">0</span>)</div>
+          <div class="items-list" id="lista-propuestas"></div>
+        </div>
+      </div>
+
+      <!-- EVENTOS -->
+      <div class="page" id="page-eventos">
+        <div class="page-hdr"><h2>Eventos</h2><p>Agenda de actos de campaña y eventos públicos</p></div>
+        <div class="card">
+          <div class="card-hdr">Añadir nuevo evento</div>
+          <div class="fg"><label>Título del evento</label><input type="text" id="f-ev-titulo" placeholder="Mitin en la Plaza Central"></div>
+          <div class="row c3">
+            <div class="fg"><label>Fecha</label><input type="date" id="f-ev-fecha"></div>
+            <div class="fg" style="grid-column:span 2"><label>Lugar / Dirección</label><input type="text" id="f-ev-lugar" placeholder="Plaza Central, Ciudad"></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>Tipo</label>
+              <select id="f-ev-tipo">
+                <option>Mitin</option><option>Debate</option><option>Reunión</option>
+                <option>Conferencia</option><option>Marcha</option><option>Rueda de Prensa</option><option>Otro</option>
+              </select>
+            </div>
+            <div class="fg"><label>Descripción breve</label><input type="text" id="f-ev-desc" placeholder="Descripción del evento"></div>
+          </div>
+          <div class="fg">
+            <label>🗺️ Link de Google Maps (opcional)</label>
+            <input type="url" id="f-ev-maplink" placeholder="https://maps.google.com/...">
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">En la página pública solo se verá el nombre del lugar. Al hacer clic, abrirá Google Maps.</div>
+          </div>
+          <div class="fg">
+            <label>📋 Link de registro (opcional)</label>
+            <input type="url" id="f-ev-registro" placeholder="https://forms.google.com/... o cualquier URL de inscripción">
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">Si se ingresa, aparecerá un botón <strong>Registrarse</strong> en la tarjeta del evento.</div>
+          </div>
+          <button class="btn btn-primary" onclick="agregarEvento()">➕ Añadir Evento</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Eventos registrados (<span id="ev-count">0</span>)</div>
+          <div class="items-list" id="lista-eventos"></div>
+        </div>
+      </div>
+
+      <!-- GALERÍA -->
+      <div class="page" id="page-galeria">
+        <div class="page-hdr"><h2>Noticias</h2><p>Imágenes y enlaces a noticias sobre el trabajo del Senador</p></div>
+        <div class="card">
+          <div class="card-hdr">Añadir nueva noticia</div>
+          <div class="fg">
+            <label>Título de la noticia</label>
+            <input type="text" id="f-gal-pie" placeholder="Ej: Sen. Villegas presenta proyecto de ley en el Senado">
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">Este título aparece como botón debajo de la imagen.</div>
+          </div>
+          <div class="fg">
+            <label>🔗 Link de la noticia (opcional)</label>
+            <input type="url" id="f-gal-link" placeholder="https://www.periodicoxyz.com/noticia/...">
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem;">Al hacer clic en el título se abrirá este enlace en una nueva pestaña.</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap;">
+            <div class="upload-zone" id="gal-drop-zone" onclick="document.getElementById('f-gal-file').click()"
+              style="flex:1;min-width:200px;padding:1.2rem;cursor:pointer;">
+              <span class="uz-icon" style="font-size:1.4rem;">📷</span>
+              <span id="gal-file-label">Seleccionar imagen(es)</span>
+              <span style="font-size:0.72rem;color:var(--muted);display:block;margin-top:0.2rem;">JPG, PNG, WebP</span>
+            </div>
+            <button class="btn btn-primary" onclick="confirmarSubirGaleria()"
+              style="height:fit-content;padding:0.9rem 1.8rem;font-size:0.9rem;">
+              📤 Subir
+            </button>
+          </div>
+          <input type="file" id="f-gal-file" accept="image/*" multiple style="display:none" onchange="previewGaleriaFiles(this)">
+          <div id="gal-preview-strip" style="display:none;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Imágenes en galería (<span id="gal-count">0</span>)</div>
+          <div class="gal-grid" id="gal-grid"></div>
+          <p id="gal-empty" style="color:var(--muted);font-size:0.88rem;display:none">No hay imágenes en la galería.</p>
+        </div>
+      </div>
+
+      <!-- REDES SOCIALES -->
+      <div class="page" id="page-redes">
+        <div class="page-hdr"><h2>Redes Sociales</h2><p>URLs de las redes del Senador — solo se muestran las que tengan URL</p></div>
+        <div class="card">
+          <div class="card-hdr">Redes principales</div>
+          <div class="row c2">
+            <div class="fg"><label>📘 Facebook (perfil)</label><input type="url" id="f-red-fb" placeholder="https://facebook.com/..."></div>
+            <div class="fg"><label>🏢 Oficina Virtual (grupo FB)</label><input type="url" id="f-red-of" placeholder="https://facebook.com/groups/..."></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>📷 Instagram</label><input type="url" id="f-red-ig" placeholder="https://instagram.com/..."></div>
+            <div class="fg"><label>𝕏 X / Twitter</label><input type="url" id="f-red-tw" placeholder="https://x.com/..."></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>🎵 TikTok</label><input type="url" id="f-red-tk" placeholder="https://tiktok.com/@..."></div>
+            <div class="fg"><label>▶️ YouTube</label><input type="url" id="f-red-yt" placeholder="https://youtube.com/@..."></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>✈️ Telegram</label><input type="url" id="f-red-tg" placeholder="https://t.me/..."></div>
+            <div class="fg"><label>💬 WhatsApp / Formulario CB</label><input type="url" id="f-red-wa" placeholder="https://wa.me/... o forms.google.com/..."></div>
+          </div>
+          <div class="row c2">
+            <div class="fg"><label>🗺️ Mapeo Político / CEDENEG</label><input type="url" id="f-red-cv" placeholder="https://..."></div>
+            <div class="fg"><!-- espacio --></div>
+          </div>
+          <button class="btn btn-primary" onclick="guardarRedes()">💾 Guardar Redes</button>
+        </div>
+      </div>
+
+      <!-- CONTACTO -->
+      <div class="page" id="page-contacto">
+        <div class="page-hdr"><h2>Datos de Contacto</h2><p>Información visible en la sección de contacto de la página pública</p></div>
+        <div class="card">
+          <div class="card-hdr">Texto introductorio</div>
+          <div class="fg"><label>Descripción / Texto de bienvenida</label><textarea id="f-c-desc"></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Teléfonos</div>
+          <div class="row c2">
+            <div class="fg"><label>📞 Teléfono Personal</label><input type="text" id="f-c-tel1" placeholder="67200811"></div>
+            <div class="fg"><label>🏛️ Teléfono Cámara de Senadores</label><input type="text" id="f-c-tel2" placeholder="71554190"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Correos electrónicos</div>
+          <div class="row c2">
+            <div class="fg"><label>📧 Correo Oficial Senado</label><input type="text" id="f-c-email" placeholder="aldo.villegas@senado.gob.bo"></div>
+            <div class="fg"><label>✉️ Correo Personal</label><input type="text" id="f-c-emailp" placeholder="villegas_aldo@hotmail.com"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Ubicación</div>
+          <div class="fg"><label>📍 Circunscripción / Ciudad</label><input type="text" id="f-c-lugar" placeholder="Cochabamba, Bolivia"></div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarContacto()">💾 Guardar Datos de Contacto</button>
+      </div>
+
+      <!-- COLORES -->
+      <div class="page" id="page-colores">
+        <div class="page-hdr"><h2>Colores del Sitio</h2><p>Elige un tema predefinido o personaliza cada color manualmente</p></div>
+
+        <div class="card">
+          <div class="card-hdr">Temas predefinidos</div>
+          <div class="color-themes" id="themes-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">Previsualización de colores activos</div>
+          <div class="color-preview-bar" id="color-preview-bar"></div>
+          <div class="custom-colors" id="custom-colors-grid"></div>
+          <hr class="divider">
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="guardarColores()">🎨 Aplicar colores al sitio</button>
+            <button class="btn btn-ghost" onclick="resetColores()">↩ Restaurar por defecto</button>
+          </div>
+          <p class="help-text" style="margin-top:0.75rem">Los cambios se aplican instantáneamente en la página pública al guardar.</p>
+        </div>
+      </div>
+
+      <!-- COMISIONES -->
+      <div class="page" id="page-comisiones">
+        <div class="page-hdr"><h2>Comisiones y Comités</h2><p>Edita toda la información de las comisiones legislativas</p></div>
+
+        <!-- TABS -->
+        <div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:2px solid var(--border);">
+          <button class="ctab2 active" id="ctab2-gen" onclick="showCTab('gen',this)" style="padding:0.7rem 1.4rem;font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;">⚙️ General</button>
+          <button class="ctab2" id="ctab2-eco" onclick="showCTab('eco',this)" style="padding:0.7rem 1.4rem;font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;">📊 Economía Plural</button>
+          <button class="ctab2" id="ctab2-int" onclick="showCTab('int',this)" style="padding:0.7rem 1.4rem;font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;">🌐 Internacional</button>
+        </div>
+
+        <!-- GEN TAB -->
+        <div id="ctab2-content-gen">
+          <div class="card">
+            <div class="card-hdr">Títulos de la sección</div>
+            <div class="fg"><label>Título principal de la sección</label><input type="text" id="f-com-titulo" placeholder="Comisiones y Comités"></div>
+            <div class="fg"><label>Descripción introductoria</label><textarea id="f-com-lead" style="min-height:70px"></textarea></div>
+            <button class="btn btn-primary" onclick="guardarComGeneral()">💾 Guardar</button>
+          </div>
+        </div>
+
+        <!-- ECO TAB -->
+        <div id="ctab2-content-eco" style="display:none">
+          <div class="card">
+            <div class="card-hdr">Cabecera — Comisión Economía Plural</div>
+            <div class="fg"><label>Etiqueta pestaña (tab)</label><input type="text" id="f-eco-tablabel" placeholder="Comisión de Economía Plural"></div>
+            <div class="fg"><label>Tag institucional</label><input type="text" id="f-eco-tag" placeholder="🏛️ Brigada Parlamentaria Cochabamba"></div>
+            <div class="fg"><label>Nombre de la Comisión</label><textarea id="f-eco-nombre" style="min-height:60px" placeholder="Comisión de Economía Plural, Producción e Industria"></textarea></div>
+            <div class="fg"><label>Subtítulo / Secretaría</label><input type="text" id="f-eco-sub" placeholder="3ra. Secretaría — Comercio, Turismo y MYPEs"></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Descripción</div>
+            <div class="fg"><label>Texto descriptivo (usa **texto** para negrita, línea en blanco para párrafo)</label><textarea id="f-eco-desc" style="min-height:160px"></textarea></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Imagen / Escudo de la Comisión</div>
+            <div class="upload-zone" onclick="document.getElementById('f-eco-img-file').click()">
+              <span class="uz-icon">🛡️</span>Subir escudo o imagen de la comisión
+            </div>
+            <input type="file" id="f-eco-img-file" accept="image/*" style="display:none" onchange="subirComImg(this,'eco')">
+            <img id="eco-img-preview" class="preview-img" style="display:none;width:90px;height:90px;object-fit:cover;border-radius:50%;box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+          </div>
+          <div class="card">
+            <div class="card-hdr">Link Google Drive</div>
+            <div class="row c2">
+              <div class="fg"><label>URL del Drive</label><input type="url" id="f-eco-drive" placeholder="https://drive.google.com/..."></div>
+              <div class="fg"><label>Texto del botón</label><input type="text" id="f-eco-drive-label" placeholder="Documentos de la Comisión — Google Drive"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Áreas de trabajo (<span id="eco-areas-count">0</span>)</div>
+            <div class="row c2">
+              <div class="fg"><label>Ícono (emoji)</label><input type="text" id="f-eco-area-icono" placeholder="🏭" maxlength="4"></div>
+              <div class="fg"><label>Título del área</label><input type="text" id="f-eco-area-titulo" placeholder="Producción e Industria"></div>
+            </div>
+            <div class="fg"><label>Descripción</label><input type="text" id="f-eco-area-desc" placeholder="Descripción breve del área..."></div>
+            <button class="btn btn-primary" onclick="agregarArea('eco')">➕ Añadir Área</button>
+            <div class="items-list" id="lista-eco-areas" style="margin-top:1rem"></div>
+          </div>
+          <button class="btn btn-primary" onclick="guardarComEco()">💾 Guardar Comisión Economía</button>
+        </div>
+
+        <!-- INT TAB -->
+        <div id="ctab2-content-int" style="display:none">
+          <div class="card">
+            <div class="card-hdr">Cabecera — Comisión Política Internacional</div>
+            <div class="fg"><label>Etiqueta pestaña (tab)</label><input type="text" id="f-int-tablabel" placeholder="Comisión Política Internacional"></div>
+            <div class="fg"><label>Tag institucional</label><input type="text" id="f-int-tag" placeholder="🏛️ Cámara de Senadores de Bolivia"></div>
+            <div class="fg"><label>Nombre de la Comisión</label><input type="text" id="f-int-nombre" placeholder="Comisión Política Internacional"></div>
+            <div class="fg"><label>Subtítulo / Comité</label><input type="text" id="f-int-sub" placeholder="Comité de Relaciones Económicas Internacionales"></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Descripción</div>
+            <div class="fg"><label>Texto descriptivo (usa **texto** para negrita)</label><textarea id="f-int-desc" style="min-height:160px"></textarea></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Imagen / Escudo de la Comisión</div>
+            <div class="upload-zone" onclick="document.getElementById('f-int-img-file').click()">
+              <span class="uz-icon">🛡️</span>Subir escudo o imagen de la comisión
+            </div>
+            <input type="file" id="f-int-img-file" accept="image/*" style="display:none" onchange="subirComImg(this,'int')">
+            <img id="int-img-preview" class="preview-img" style="display:none;width:90px;height:90px;object-fit:cover;border-radius:50%;box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+          </div>
+          <div class="card">
+            <div class="card-hdr">Áreas de trabajo (<span id="int-areas-count">0</span>)</div>
+            <div class="row c2">
+              <div class="fg"><label>Ícono (emoji)</label><input type="text" id="f-int-area-icono" placeholder="🤝" maxlength="4"></div>
+              <div class="fg"><label>Título del área</label><input type="text" id="f-int-area-titulo" placeholder="Tratados Internacionales"></div>
+            </div>
+            <div class="fg"><label>Descripción</label><input type="text" id="f-int-area-desc" placeholder="Descripción breve del área..."></div>
+            <button class="btn btn-primary" onclick="agregarArea('int')">➕ Añadir Área</button>
+            <div class="items-list" id="lista-int-areas" style="margin-top:1rem"></div>
+          </div>
+          <button class="btn btn-primary" onclick="guardarComInt()">💾 Guardar Comisión Internacional</button>
+        </div>
+
+      </div>
+
+      <!-- FUNCIONARIOS -->
+      <div class="page" id="page-funcionarios">
+        <div class="page-hdr"><h2>Funcionarios de Comisiones</h2><p>Gestiona los miembros de cada comisión legislativa</p></div>
+
+        <!-- TABS -->
+        <div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:2px solid var(--border);">
+          <button class="ftab active" id="ftab-eco" onclick="showFTab('eco',this)" style="padding:0.7rem 1.4rem;font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;transition:all 0.2s;">📊 Comisión Economía Plural</button>
+          <button class="ftab" id="ftab-int" onclick="showFTab('int',this)" style="padding:0.7rem 1.4rem;font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;transition:all 0.2s;">🌐 Comisión Internacional</button>
+        </div>
+
+        <!-- ECO TAB -->
+        <div id="ftab-content-eco">
+          <div class="card">
+            <div class="card-hdr">Añadir funcionario — Comisión Economía Plural</div>
+            <div class="row c2">
+              <div class="fg"><label>Nombre completo</label><input type="text" id="f-fe-nombre" placeholder="Nombre Apellido"></div>
+              <div class="fg"><label>Cargo en la Comisión</label><input type="text" id="f-fe-cargo" placeholder="3ra. Secretaría"></div>
+            </div>
+            <div class="fg"><label>Descripción / Rol institucional</label><input type="text" id="f-fe-desc" placeholder="Senador — Cochabamba"></div>
+            <div class="fg"><label>Foto del funcionario</label>
+              <input type="text" id="f-fe-foto-url" placeholder="URL de la foto (opcional)">
+              <div style="text-align:center;color:var(--muted);font-size:0.75rem;margin:0.4rem 0">— o sube desde tu dispositivo —</div>
+              <div class="upload-zone" onclick="document.getElementById('f-fe-foto-file').click()">
+                <span class="uz-icon">👤</span>Subir foto del funcionario
+              </div>
+              <input type="file" id="f-fe-foto-file" accept="image/*" style="display:none" onchange="previewFuncPhoto(this,'eco')">
+              <img id="fe-foto-preview" class="preview-img">
+            </div>
+            <button class="btn btn-primary" onclick="agregarFuncionario('eco')">➕ Añadir Funcionario</button>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Funcionarios actuales (<span id="fe-count">0</span>)</div>
+            <div class="items-list" id="lista-func-eco"></div>
+          </div>
+        </div>
+
+        <!-- INT TAB -->
+        <div id="ftab-content-int" style="display:none">
+          <div class="card">
+            <div class="card-hdr">Añadir miembro — Comisión Política Internacional</div>
+            <div class="row c2">
+              <div class="fg"><label>Nombre completo</label><input type="text" id="f-fi-nombre" placeholder="Nombre Apellido"></div>
+              <div class="fg"><label>Cargo en la Comisión</label><input type="text" id="f-fi-cargo" placeholder="Miembro"></div>
+            </div>
+            <div class="fg"><label>Descripción / Rol institucional</label><input type="text" id="f-fi-desc" placeholder="Senador — Bolivia"></div>
+            <div class="fg"><label>Foto del funcionario</label>
+              <input type="text" id="f-fi-foto-url" placeholder="URL de la foto (opcional)">
+              <div style="text-align:center;color:var(--muted);font-size:0.75rem;margin:0.4rem 0">— o sube desde tu dispositivo —</div>
+              <div class="upload-zone" onclick="document.getElementById('f-fi-foto-file').click()">
+                <span class="uz-icon">👤</span>Subir foto del miembro
+              </div>
+              <input type="file" id="f-fi-foto-file" accept="image/*" style="display:none" onchange="previewFuncPhoto(this,'int')">
+              <img id="fi-foto-preview" class="preview-img">
+            </div>
+            <button class="btn btn-primary" onclick="agregarFuncionario('int')">➕ Añadir Miembro</button>
+          </div>
+          <div class="card">
+            <div class="card-hdr">Miembros actuales (<span id="fi-count">0</span>)</div>
+            <div class="items-list" id="lista-func-int"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="page" id="page-config">
+        <div class="page-hdr"><h2>Configuración</h2><p>Ajustes generales y seguridad del panel</p></div>
+        <div class="card">
+          <div class="card-hdr">General</div>
+          <div class="fg"><label>Nombre del sitio (footer y título del navegador)</label><input type="text" id="f-cfg-nombre"></div>
+          <button class="btn btn-primary" onclick="guardarConfig()">💾 Guardar</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Cambiar contraseña de administrador</div>
+          <div class="row c2">
+            <div class="fg"><label>Nueva contraseña</label><input type="password" id="f-pass1" placeholder="Mínimo 4 caracteres"></div>
+            <div class="fg"><label>Confirmar contraseña</label><input type="password" id="f-pass2" placeholder="Repite la contraseña"></div>
+          </div>
+          <button class="btn btn-primary" onclick="cambiarPass()">🔑 Cambiar Contraseña</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr">Zona de peligro</div>
+          <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;">Esta acción elimina permanentemente todos los datos y restaura la página al estado inicial.</p>
+          <button class="btn btn-danger" onclick="resetearTodo()">🗑️ Restaurar todo a cero</button>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div id="toast">✔ Cambios guardados</div>
+
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
